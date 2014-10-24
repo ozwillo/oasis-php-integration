@@ -1,0 +1,34 @@
+{
+    "name": "pole-numerique/oasis-php-integration",
+    "description": "Library for integrating PHP applications with Oasis.",
+    "version": "0.0.1-dev",
+    "type": "library",
+    "keywords": ["Oasis", "OAuth2 + OpenID Connect"],
+    "license": "LGPL-3.0",
+    "authors": [{
+        "name": "Aurélien Ponçon",
+        "email": "a.poncon@atolcd.com"
+    },{
+        "name": "Xavier Calland",
+        "email": "x.calland@atolcd.com"
+    }],
+    "support": {
+        "issues":"https://github.com/pole-numerique/oasis-php-integration/issues",
+        "source": "https://github.com/pole-numerique/oasis-php-integration"
+    },
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "PoleNumerique\\": "src/PoleNumerique/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.3"
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "archive": {
+        "exclude": ["/.*", "/phpunit.xml.dist"]
+    }
+}
