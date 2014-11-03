@@ -20,7 +20,9 @@ https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
 $oasis = Oasis::builder()
   ->setProviderConfig(array(
     'authorization_endpoint' =>
-      'https://oasis.example.org/a/auth'
+      'https://oasis.example.org/a/auth',
+    'token_endpoint' =>
+      'https://oasis.example.com/a/token'
   ))
   ->setCredentials('myClientId', 'myClientPassword')
   // Optional: use only if you have a single 'redirect_uri'
@@ -57,3 +59,60 @@ Now you can redirect the user to this URI.
 
 For more information about the Authorizaton request:
 http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest
+
+### Get the access token
+
+After the user logged in and authorized your application (or not), he will be redirected to the `redirect_uri` provided in the Authorization request.
+
+The result is conveyed in the query parameters.
+
+Provide the query string of the actual uri to the API for processing it and get an access token in exchange (if the Authorization process was successful).
+
+```php
+try {
+  list($accessToken, $refreshToken, $idToken, $state) = $oasis
+    ->initExchangeCodeForTokenRequest()
+    // The query string of the actual uri used by
+    // the Authorization endpoint to redirect the user.
+    // An array corresponding to the query string can also
+    // be provided instead of the query string.
+    ->setAuthorizationResponse($queryString)
+    // Required if used in Authorization request
+    ->setRedirectUri('https://app2.example.com/another-redirect')
+    ->setExpectedState($serializedState)
+    ->setExpectedNonce($nonce)
+    // Optional, in seconds
+    // Indicates the maximum lifetime of the HTTP request
+    ->setTimeout(30)
+    ->execute();
+} catch (AuthorizationResponseException $e) {
+  // The authorization request was not successful.
+  // Check the associated error code to know what happened
+  echo $e->getError() . ' => ' . $e->getErrorDescription();
+} catch (TokenResponseException $e) {
+  // The access token request was not successful.
+  // Check the associated error code to know what happened
+  echo $e->getError() . ' [' . $e->getStatusCode() . '] => '
+    . $e->getErrorDescription();
+}
+// Congratulations! You have your access token!
+echo $accessToken->getCode();
+// If you want to have the expiration time of your access token
+echo $accessToken->getExpiresAt(); // timestamp
+// The user may authorize more than the requested scope
+// To get the authorized scope:
+echo $accessToken->getScope();
+```
+
+You may store the received ID Token to use it in Authorization requests with the `id_token_hint` parameter.
+
+The received state is the one you provided in the previous Authorization request.
+
+For more information about Token request:
+http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest
+
+For more information about Authorization errors:
+https://openid.net/specs/openid-connect-core-1_0.html#AuthError
+
+For more information about Token errors:
+https://openid.net/specs/openid-connect-core-1_0.html#TokenErrorResponse

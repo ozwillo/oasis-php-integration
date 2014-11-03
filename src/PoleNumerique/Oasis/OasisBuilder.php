@@ -23,6 +23,7 @@ namespace PoleNumerique\Oasis;
 
 use PoleNumerique\Oasis\Authz\StateSerializer;
 use PoleNumerique\Oasis\Exception\OasisException;
+use PoleNumerique\Oasis\Tools\HttpClient;
 
 class OasisBuilder
 {
@@ -59,6 +60,6 @@ class OasisBuilder
             throw new OasisException('Missing provider configuration.');
         }
         return new Oasis($this->clientId, $this->clientPassword, $this->defaultRedirectUri, $this->providerConfiguration,
-            new StateSerializer());
+            new HttpClient(), new StateSerializer());
     }
 }
