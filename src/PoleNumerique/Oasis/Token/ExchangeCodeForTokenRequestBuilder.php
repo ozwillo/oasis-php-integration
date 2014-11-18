@@ -32,9 +32,11 @@ use PoleNumerique\Oasis\Tools\HttpClient;
 class ExchangeCodeForTokenRequestBuilder
 {
     private $httpClient;
+    private $tokenValidator;
     private $stateSerializer;
 
     private $tokenEndpoint;
+    private $expectedIssuer;
     private $clientId;
     private $clientPassword;
 
@@ -45,13 +47,16 @@ class ExchangeCodeForTokenRequestBuilder
     private $expectedNonce;
     private $timeout;
 
-    public function __construct(HttpClient $httpClient, StateSerializer $stateSerializer, $clientId, $clientPassword, $tokenEndpoint)
+    public function __construct(HttpClient $httpClient, StateSerializer $stateSerializer, TokenValidator $tokenValidator,
+                                $clientId, $clientPassword, $tokenEndpoint, $expectedIssuer)
     {
         $this->httpClient = $httpClient;
+        $this->tokenValidator = $tokenValidator;
         $this->stateSerializer = $stateSerializer;
         $this->clientId = $clientId;
         $this->clientPassword = $clientPassword;
         $this->tokenEndpoint = $tokenEndpoint;
+        $this->expectedIssuer = $expectedIssuer;
     }
 
     /**
@@ -154,6 +159,9 @@ class ExchangeCodeForTokenRequestBuilder
             throw new OasisException('Error while trying to get an access token from an authorization code [Status=' . $response->getStatusCode() . ']');
         }
 
+        $idToken = $this->tokenValidator->validateAndGetIdToken($responseData['id_token'], $this->clientId,
+            $this->expectedIssuer, $this->expectedNonce);
+
         // XXX: Even if the OpenID specification specify that the scope might not be included in the Token response,
         // there isn't any verification on $responseData['scope'] presence because it's always sent by the Oasis server
         $authorizedScope = explode(' ', $responseData['scope']);
@@ -161,7 +169,7 @@ class ExchangeCodeForTokenRequestBuilder
         return array(
             new AccessToken($responseData['access_token'], $authorizedScope, $responseData['expires_in'], $now),
             isset($responseData['refresh_token']) ? new Token($responseData['refresh_token'], $authorizedScope) : null,
-            $responseData['id_token'],
+            $idToken,
             $unserializedState
         );
     }

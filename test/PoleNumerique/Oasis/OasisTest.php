@@ -28,13 +28,18 @@ class OasisTest extends \PHPUnit_Framework_TestCase
     const CLIENT_ID = 'Barney Gumble';
     const REDIRECT_URI = 'https://app.example.com';
     const ANOTHER_REDIRECT_URI = 'https://another-app.example.com';
+    const JWKS_URI = 'https://keys.example.net';
 
-    private static $providerConfig = array('authorization_endpoint' => 'https://oasis.example.org/authz');
+    private static $providerConfig = array(
+        'authorization_endpoint' => 'https://oasis.example.org/authz',
+        'jwks_uri' => self::JWKS_URI
+    );
 
     public function testAuthorizationRequestInitialization()
     {
         $oasis = Oasis::builder()
             ->setProviderConfig(self::$providerConfig)
+            ->setCache($this->getMock('\PoleNumerique\Oasis\Tools\Cache', array('get', 'put')))
             ->setCredentials(self::CLIENT_ID, 'beer')
             ->build();
         list($uri) = $oasis->initAuthorizationRequest()
@@ -49,7 +54,8 @@ class OasisTest extends \PHPUnit_Framework_TestCase
     {
         $oasis = Oasis::builder()
             ->setProviderConfig(self::$providerConfig)
-            ->setCredentials(self::CLIENT_ID, 'beer')
+            ->setCache($this->getMock('\PoleNumerique\Oasis\Tools\Cache', array('get', 'put')))
+            ->setCredentials(self::CLIENT_ID, 'always beer')
             ->setDefaultRedirectUri(self::REDIRECT_URI)
             ->build();
         list($uri) = $oasis->initAuthorizationRequest()
@@ -63,6 +69,7 @@ class OasisTest extends \PHPUnit_Framework_TestCase
     {
         $oasis = Oasis::builder()
             ->setProviderConfig(self::$providerConfig)
+            ->setCache($this->getMock('\PoleNumerique\Oasis\Tools\Cache', array('get', 'put')))
             ->setCredentials(self::CLIENT_ID, 'beer')
             ->setDefaultRedirectUri(self::REDIRECT_URI)
             ->build();
@@ -80,8 +87,20 @@ class OasisTest extends \PHPUnit_Framework_TestCase
     public function testInitializationWithoutProviderConfig()
     {
         Oasis::builder()
+            ->setCache($this->getMock('\PoleNumerique\Oasis\Tools\Cache', array('get', 'put')))
             ->setCredentials(self::CLIENT_ID, 'beer')
-            ->build();
+            ->build();;
+    }
+
+    /**
+     * @expectedException \PoleNumerique\Oasis\Exception\OasisException
+     */
+    public function testInitializationWithoutCache()
+    {
+        Oasis::builder()
+            ->setProviderConfig(self::$providerConfig)
+            ->setCredentials(self::CLIENT_ID, 'beer')
+            ->build();;
     }
 
     /**
@@ -91,6 +110,7 @@ class OasisTest extends \PHPUnit_Framework_TestCase
     {
         Oasis::builder()
             ->setProviderConfig(self::$providerConfig)
-            ->build();
+            ->setCache($this->getMock('\PoleNumerique\Oasis\Tools\Cache', array('get', 'put')))
+            ->build();;
     }
 }

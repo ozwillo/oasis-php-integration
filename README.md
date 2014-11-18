@@ -16,6 +16,12 @@ For the moment, the only available mean to provide the OpenID Provider Configura
 For more information about the OpenID Provider Configuration Document:
 https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
 
+The kernel also needs to have a provided cache implementation for storing some data like Oasis public keys.
+
+The cache needs to be common for all requests, not request scoped cache.
+
+A basic implementation is available for APC Storage.
+
 ```php
 $oasis = Oasis::builder()
   ->setProviderConfig(array(
@@ -27,6 +33,7 @@ $oasis = Oasis::builder()
   ->setCredentials('myClientId', 'myClientPassword')
   // Optional: use only if you have a single 'redirect_uri'
   ->setDefaultRedirectUri('https://app.example.com/redirect/')
+  ->setCache(new ApcCache()) // Might be changed
   ->build();
 ```
 
@@ -84,6 +91,9 @@ try {
     // Optional, in seconds
     // Indicates the maximum lifetime of the HTTP request
     ->setTimeout(30)
+    // Optional, in seconds
+    // Indicates the maximum lifetime of the ID Token
+    ->setTimeToLive(30)
     ->execute();
 } catch (AuthorizationResponseException $e) {
   // The authorization request was not successful.
@@ -102,9 +112,18 @@ echo $accessToken->getExpiresAt(); // timestamp
 // The user may authorize more than the requested scope
 // To get the authorized scope:
 echo $accessToken->getScope();
+
+// You may also user the $idToken object
+echo $idToken->getCode();
+echo $idToken->isAppAdmin();
+echo $idToken->isAppUser();
+echo $idToken->getSubject();
+// And so on...
 ```
 
 You may store the received ID Token to use it in Authorization requests with the `id_token_hint` parameter.
+
+This ID Token is already verified so it's not useful to verify it on your own.
 
 The received state is the one you provided in the previous Authorization request.
 
@@ -116,6 +135,33 @@ https://openid.net/specs/openid-connect-core-1_0.html#AuthError
 
 For more information about Token errors:
 https://openid.net/specs/openid-connect-core-1_0.html#TokenErrorResponse
+
+## HOW TO
+### Create your own cache implementation
+
+For example, if you want to wrap a cache from doctrine/cache:
+
+```php
+class DoctrineCache implements Cache
+{
+    private $cache;
+
+    function __construct(\Doctrine\Common\Cache\Cache $cache)
+    {
+        $this->cache = $cache;
+    }
+
+    public function get($key)
+    {
+        return $this->cache->fetch($key);
+    }
+
+    public function put($key, $value, $expiresIn = 0)
+    {
+        $this->cache->save($key, $value, $expiresIn);
+    }
+}
+```
 
 ## License
 

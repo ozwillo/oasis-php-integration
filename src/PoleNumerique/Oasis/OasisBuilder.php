@@ -23,14 +23,27 @@ namespace PoleNumerique\Oasis;
 
 use PoleNumerique\Oasis\Authz\StateSerializer;
 use PoleNumerique\Oasis\Exception\OasisException;
+use PoleNumerique\Oasis\Token\TokenValidator;
+use PoleNumerique\Oasis\Tools\Cache;
 use PoleNumerique\Oasis\Tools\HttpClient;
+use PoleNumerique\Oasis\Tools\JwtVerifier;
+use PoleNumerique\Oasis\Tools\KeysProvider;
 
 class OasisBuilder
 {
+
+    private $httpClient;
+
     private $clientId;
     private $clientPassword;
     private $defaultRedirectUri;
     private $providerConfiguration;
+    private $cache;
+
+    function __construct($httpClient = null)
+    {
+        $this->httpClient = $httpClient ? $httpClient : new HttpClient();
+    }
 
     public function setCredentials($clientId, $clientPassword)
     {
@@ -51,6 +64,12 @@ class OasisBuilder
         return $this;
     }
 
+    public function setCache(Cache $cache)
+    {
+        $this->cache = $cache;
+        return $this;
+    }
+
     public function build()
     {
         if (!$this->clientId || !$this->clientPassword) {
@@ -59,7 +78,11 @@ class OasisBuilder
         if (!$this->providerConfiguration) {
             throw new OasisException('Missing provider configuration.');
         }
+        if (!$this->cache) {
+            throw new OasisException('Missing cache.');
+        }
+        $keysProvider = new KeysProvider($this->cache, $this->httpClient, $this->clientId, $this->clientPassword, $this->providerConfiguration['jwks_uri']);
         return new Oasis($this->clientId, $this->clientPassword, $this->defaultRedirectUri, $this->providerConfiguration,
-            new HttpClient(), new StateSerializer());
+            new TokenValidator(new JwtVerifier($keysProvider)), $this->httpClient, new StateSerializer());
     }
 }

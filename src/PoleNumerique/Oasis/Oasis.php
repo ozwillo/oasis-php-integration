@@ -24,6 +24,7 @@ namespace PoleNumerique\Oasis;
 use PoleNumerique\Oasis\Authz\AuthorizationRequestBuilder;
 use PoleNumerique\Oasis\Authz\StateSerializer;
 use PoleNumerique\Oasis\Token\ExchangeCodeForTokenRequestBuilder;
+use PoleNumerique\Oasis\Token\TokenValidator;
 use PoleNumerique\Oasis\Tools\HttpClient;
 
 class Oasis
@@ -32,16 +33,19 @@ class Oasis
     private $clientPassword;
     private $defaultRedirectUri;
     private $providerConfiguration;
+    private $tokenValidator;
     private $httpClient;
     private $stateSerializer;
 
     function __construct($clientId, $clientPassword, $defaultRedirectUri, $providerConfiguration,
-                         HttpClient $httpClient = null, StateSerializer $stateSerializer = null)
+                         TokenValidator $tokenValidator, HttpClient $httpClient = null,
+                         StateSerializer $stateSerializer = null)
     {
         $this->clientId = $clientId;
         $this->clientPassword = $clientPassword;
         $this->defaultRedirectUri = $defaultRedirectUri;
         $this->providerConfiguration = $providerConfiguration;
+        $this->tokenValidator = $tokenValidator;
         $this->httpClient = $httpClient ? $httpClient : new HttpClient();
         $this->stateSerializer = $stateSerializer ? $stateSerializer : new StateSerializer();
     }
@@ -62,8 +66,8 @@ class Oasis
 
     public function initExchangeCodeForTokenRequest()
     {
-        $accessTokenRequestBuilder = new ExchangeCodeForTokenRequestBuilder($this->httpClient, $this->stateSerializer, $this->clientId, $this->clientPassword,
-            $this->providerConfiguration['token_endpoint']);
+        $accessTokenRequestBuilder = new ExchangeCodeForTokenRequestBuilder($this->httpClient, $this->stateSerializer, $this->tokenValidator, $this->clientId, $this->clientPassword,
+            $this->providerConfiguration['token_endpoint'], $this->providerConfiguration['issuer']);
         if ($this->defaultRedirectUri) {
             $accessTokenRequestBuilder->setRedirectUri($this->defaultRedirectUri);
         }

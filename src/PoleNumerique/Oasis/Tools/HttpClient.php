@@ -30,6 +30,18 @@ class HttpClient
     /**
      * @throws HttpException
      */
+    public function get($url, $options)
+    {
+        if (isset($options['params'])) {
+            $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query($options['params']);
+        }
+        $curlOptions = $this->getCurlOptions($url, 'GET', $options);
+        return $this->build($curlOptions);
+    }
+
+    /**
+     * @throws \HttpException
+     */
     public function post($url, $options)
     {
         $curlOptions = $this->getCurlOptions($url, 'POST', $options);

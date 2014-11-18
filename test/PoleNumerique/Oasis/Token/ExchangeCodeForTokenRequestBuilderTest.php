@@ -30,6 +30,7 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
     const TOKEN_ENDPOINT = 'https://my.oasis.eu/token';
     const CLIENT_ID = 'Marge';
     const CLIENT_PASSWORD = 'Bouvier';
+    const ISSUER = 'some issuer';
     const EXPIRES_IN = 3600;
     const ACCESS_TOKEN = 'Vulyb25pcXVlIEF1Z2VyZWF1';
     const ID_TOKEN = 'I confirm this token is valid';
@@ -40,6 +41,18 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
     const SCOPE = 'openid datacore';
     const AUTHORIZATION_CODE = 'RWlmZmVsIDY1';
     const REDIRECT_URI = 'some redirect uri';
+    const TIMEOUT = 20000;
+
+    private $idToken;
+
+    function __construct()
+    {
+        $this->idToken = array(
+            'iat' => ClockProvider::getClock()->getTime(),
+            'iss' => self::ISSUER,
+            'nonce' => self::NONCE
+        );
+    }
 
     public function testValidAccessTokenRequest()
     {
@@ -58,10 +71,11 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
         ));
 
         $httpClientObserver = $this->mockHttpClient($expectedHttpResponse);
+        $tokenValidatorObserver = $this->mockTokenValidator(true);
         $stateSerializerObserver = $this->mockStateSerializer(self::SERIALIZED_STATE);
 
         $exchangeCodeForTokenRequestBuilder = new ExchangeCodeForTokenRequestBuilder($httpClientObserver, $stateSerializerObserver,
-            self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT);
+            $tokenValidatorObserver, self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT, self::ISSUER);
         list($accessToken, , $idToken, $state) = $exchangeCodeForTokenRequestBuilder
             ->setAuthorizationResponse(array(
                 'code' => self::AUTHORIZATION_CODE,
@@ -70,6 +84,7 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
             ->setRedirectUri(self::REDIRECT_URI)
             ->setExpectedState(self::SERIALIZED_STATE)
             ->setExpectedNonce(self::NONCE)
+            ->setTimeout(self::TIMEOUT)
             ->execute();
         $this->assertAccessTokenValid($expectedTokenResponseData, $accessToken, $idToken, $state);
     }
@@ -91,15 +106,17 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
         ));
 
         $httpClientObserver = $this->mockHttpClient($expectedHttpResponse);
+        $tokenValidatorObserver = $this->mockTokenValidator(true);
         $stateSerializerObserver = $this->mockStateSerializer(self::SERIALIZED_STATE);
 
         $exchangeCodeForTokenRequestBuilder = new ExchangeCodeForTokenRequestBuilder($httpClientObserver, $stateSerializerObserver,
-            self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT);
+            $tokenValidatorObserver, self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT, self::ISSUER);
         list($accessToken, , $idToken, $state) = $exchangeCodeForTokenRequestBuilder
             ->setAuthorizationResponse('code=' . self::AUTHORIZATION_CODE . '&state=' . self::SERIALIZED_STATE)
             ->setRedirectUri(self::REDIRECT_URI)
             ->setExpectedState(self::SERIALIZED_STATE)
             ->setExpectedNonce(self::NONCE)
+            ->setTimeout(self::TIMEOUT)
             ->execute();
         $this->assertAccessTokenValid($expectedTokenResponseData, $accessToken, $idToken, $state);
     }
@@ -110,10 +127,11 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
     public function testAccessTokenRequestWithoutRedirectUri()
     {
         $httpClientObserver = $this->mockHttpClient();
+        $tokenValidatorObserver = $this->mockTokenValidator(false);
         $stateSerializerObserver = $this->mockStateSerializer(self::SERIALIZED_STATE);
 
         $exchangeCodeForTokenRequestBuilder = new ExchangeCodeForTokenRequestBuilder($httpClientObserver, $stateSerializerObserver,
-            self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT);
+            $tokenValidatorObserver, self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT, self::ISSUER);
         $exchangeCodeForTokenRequestBuilder
             ->setAuthorizationResponse(array(
                 'code' => self::AUTHORIZATION_CODE,
@@ -121,6 +139,7 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
             ))
             ->setExpectedState(self::SERIALIZED_STATE)
             ->setExpectedNonce(self::NONCE)
+            ->setTimeout(self::TIMEOUT)
             ->execute();
     }
 
@@ -130,14 +149,16 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
     public function testAccessTokenRequestWithoutAuthorizationResponse()
     {
         $httpClientObserver = $this->mockHttpClient();
+        $tokenValidatorObserver = $this->mockTokenValidator(false);
         $stateSerializerObserver = $this->mockStateSerializer(self::SERIALIZED_STATE);
 
         $exchangeCodeForTokenRequestBuilder = new ExchangeCodeForTokenRequestBuilder($httpClientObserver, $stateSerializerObserver,
-            self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT);
+            $tokenValidatorObserver, self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT, self::ISSUER);
         $exchangeCodeForTokenRequestBuilder
             ->setRedirectUri(self::REDIRECT_URI)
             ->setExpectedState(self::SERIALIZED_STATE)
             ->setExpectedNonce(self::NONCE)
+            ->setTimeout(self::TIMEOUT)
             ->execute();
     }
 
@@ -147,10 +168,11 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
     public function testAccessTokenRequestWithWrongAuthorizationResponse()
     {
         $httpClientObserver = $this->mockHttpClient();
+        $tokenValidatorObserver = $this->mockTokenValidator(false);
         $stateSerializerObserver = $this->mockStateSerializer(self::SERIALIZED_STATE);
 
         $exchangeCodeForTokenRequestBuilder = new ExchangeCodeForTokenRequestBuilder($httpClientObserver, $stateSerializerObserver,
-            self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT);
+            $tokenValidatorObserver, self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT, self::ISSUER);
         $exchangeCodeForTokenRequestBuilder->setAuthorizationResponse(array('error' => 'login_required'));
     }
 
@@ -167,10 +189,11 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
         ));
 
         $httpClientObserver = $this->mockHttpClient($expectedHttpResponse);
+        $tokenValidatorObserver = $this->mockTokenValidator(false);
         $stateSerializerObserver = $this->mockStateSerializer(self::SERIALIZED_STATE);
 
         $exchangeCodeForTokenRequestBuilder = new ExchangeCodeForTokenRequestBuilder($httpClientObserver, $stateSerializerObserver,
-            self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT);
+            $tokenValidatorObserver, self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT, self::ISSUER);
         $exchangeCodeForTokenRequestBuilder
             ->setAuthorizationResponse(array(
                 'code' => self::AUTHORIZATION_CODE,
@@ -179,6 +202,7 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
             ->setRedirectUri(self::REDIRECT_URI)
             ->setExpectedState(self::SERIALIZED_STATE)
             ->setExpectedNonce(self::NONCE)
+            ->setTimeout(self::TIMEOUT)
             ->execute();
     }
 
@@ -188,10 +212,11 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
     public function testAccessTokenRequestWithWrongState()
     {
         $httpClientObserver = $this->mockHttpClient();
+        $tokenValidatorObserver = $this->mockTokenValidator(false);
         $stateSerializerObserver = $this->mockStateSerializer(self::UNKNOWN_SERIALIZED_STATE);
 
         $exchangeCodeForTokenRequestBuilder = new ExchangeCodeForTokenRequestBuilder($httpClientObserver, $stateSerializerObserver,
-            self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT);
+            $tokenValidatorObserver, self::CLIENT_ID, self::CLIENT_PASSWORD, self::TOKEN_ENDPOINT, self::ISSUER);
         $exchangeCodeForTokenRequestBuilder
             ->setAuthorizationResponse(array(
                 'code' => self::AUTHORIZATION_CODE,
@@ -200,6 +225,7 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
             ->setRedirectUri(self::REDIRECT_URI)
             ->setExpectedState(self::SERIALIZED_STATE)
             ->setExpectedNonce(self::NONCE)
+            ->setTimeout(self::TIMEOUT)
             ->execute();
     }
 
@@ -208,7 +234,7 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expectedTokenResponseData['access_token'], $accessToken->getCode());
         $this->assertEquals(explode(' ', $expectedTokenResponseData['scope']), $accessToken->getScope());
         $this->assertEquals($expectedTokenResponseData['expires_in'] + ClockProvider::getClock()->getTime(), $accessToken->getExpiresAt());
-        $this->assertEquals($expectedTokenResponseData['id_token'], $idToken);
+        $this->assertEquals($expectedTokenResponseData['id_token'], $idToken->getCode());
         $this->assertEquals(self::STATE, $state);
     }
 
@@ -223,7 +249,8 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
                         $options['auth']['password'] === self::CLIENT_PASSWORD &&
                         $options['params']['code'] === self::AUTHORIZATION_CODE &&
                         $options['params']['grant_type'] === 'authorization_code' &&
-                        $options['params']['redirect_uri'] === self::REDIRECT_URI;
+                        $options['params']['redirect_uri'] === self::REDIRECT_URI &&
+                        $options['timeout'] === self::TIMEOUT;;
                 }))
                 ->willReturn($expectedHttpResponse);
         } else {
@@ -232,6 +259,28 @@ class ExchangeCodeForTokenRequestBuilderTest extends \PHPUnit_Framework_TestCase
                 ->with(self::TOKEN_ENDPOINT, $this->anything());
         }
         return $httpClientObserver;
+    }
+
+    private function mockTokenValidator($shouldBeCalled)
+    {
+        $tokenValidatorObserver = $this->getMock(
+            '\PoleNumerique\Oasis\Token\TokenValidator',
+            array('validateAndGetIdToken'),
+            array(),
+            'TokenValidator_test',
+            false
+        );
+        if ($shouldBeCalled) {
+            $tokenValidatorObserver->expects($this->once())
+                ->method('validateAndGetIdToken')
+                ->with(self::ID_TOKEN, self::CLIENT_ID, self::ISSUER, self::NONCE)
+                ->willReturn(new IdToken($this->idToken, self::ID_TOKEN));
+        } else {
+            $tokenValidatorObserver->expects($this->never())
+                ->method('validateAndGetIdToken')
+                ->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), $this->anything());
+        }
+        return $tokenValidatorObserver;
     }
 
     private function mockStateSerializer($serializedState)
