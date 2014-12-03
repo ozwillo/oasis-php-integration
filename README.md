@@ -30,11 +30,17 @@ $oasis = Oasis::builder()
     'token_endpoint' =>
       'https://oasis.example.com/a/token',
     'userinfo_endpoint' =>
-      'https://oasis.example.com/a/userinfo'
+      'https://oasis.example.com/a/userinfo',
+    'end_session_endpoint' =>
+      'https://oasis.example.com/a/logout',
+    'revocation_endpoint' =>
+      'https://oasis.example.com/a/revoke'
   ))
   ->setCredentials('myClientId', 'myClientPassword')
   // Optional: use only if you have a single 'redirect_uri'
   ->setDefaultRedirectUri('https://app.example.com/redirect/')
+  // Optional: use only if you have a single 'post_logout_redirect_uri'
+  ->setDefaultPostLogoutRedirectUri('https://app.example/after-logout')
   ->setCache(new ApcCache()) // Might be changed
   ->build();
 ```
@@ -123,7 +129,7 @@ echo $idToken->getSubject();
 // And so on...
 ```
 
-You may store the received ID Token to use it in Authorization requests with the `id_token_hint` parameter.
+You may store the received ID Token to use it in Authorization requests with the `id_token_hint` parameter and also during log out process with the `id_token_hint` parameter.
 
 This ID Token is already verified so it's not useful to verify it on your own.
 
@@ -163,6 +169,44 @@ echo $userInfo->getName();
 ```
 If you want the full list of available data: [`UserInfo.php` source file](https://github.com/pole-numerique/oasis-php-integration/blob/master/src/PoleNumerique/Oasis/UserInfo/UserInfo.php)
 
+### Revoke tokens
+You may want to revoke tokens you received earlier from the Oasis kernel after doing your process or before logging out the user.
+```php
+try {
+  $oasis->initRevocationRequest()
+    ->setToken($accessToken)
+    ->execute();
+} catch (TokenResponseException $e) {
+  // The revocation request was not successful.
+  // Check the associated error code to know what happened
+  echo $e->getError() . ' [' . $e->getStatusCode() . '] => '
+    . $e->getErrorDescription();
+}
+```
+
+### Log out from Oasis
+If the user wants to log out of your application and Oasis, only invalidating your session will not be effective.
+To log the user out of your application, you need to:
+
+ 1. revoke all tokens (see previous paragraph for an example)
+ 2. invalidate your session
+ 3. redirect to the kernel so the user can possibly sign out of Oasis as a whole
+
+```php
+// Generate the URI for redirecting the user to the logout endpoint
+// of the Oasis Kernel
+$logoutUri = $oasis
+  ->initLogoutRequest()
+  ->setIdTokenHint($idToken->getCode())
+  // Optional if default 'post_logout_redirect_uri'
+  // Will override the default one if provided
+  ->setPostLogoutRedirectUri('https://app.example.com/redirect')
+  // Optional (useful only with a post_logout_redirect_uri)
+  ->setState($state)
+  ->buildUri();
+```
+
+You can now redirect the user to `$logoutUri` to let him (possibly) sign out of Oasis as a whole.
 
 ## HOW TO
 ### Create your own cache implementation

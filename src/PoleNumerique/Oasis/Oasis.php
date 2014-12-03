@@ -21,10 +21,12 @@
 
 namespace PoleNumerique\Oasis;
 
+use PoleNumerique\Oasis\Authn\LogoutRequestBuilder;
 use PoleNumerique\Oasis\Authz\AuthorizationRequestBuilder;
 use PoleNumerique\Oasis\Authz\StateSerializer;
 use PoleNumerique\Oasis\Token\ExchangeCodeForTokenRequestBuilder;
 use PoleNumerique\Oasis\Token\IdTokenValidator;
+use PoleNumerique\Oasis\Token\RevocationRequestBuilder;
 use PoleNumerique\Oasis\Tools\HttpClient;
 use PoleNumerique\Oasis\UserInfo\UserInfoRequestBuilder;
 use PoleNumerique\Oasis\UserInfo\UserInfoValidator;
@@ -33,6 +35,7 @@ class Oasis
 {
     private $clientId;
     private $clientPassword;
+    private $defaultPostLogoutRedirectUri;
     private $defaultRedirectUri;
     private $providerConfiguration;
     private $tokenValidator;
@@ -40,12 +43,13 @@ class Oasis
     private $httpClient;
     private $stateSerializer;
 
-    function __construct($clientId, $clientPassword, $defaultRedirectUri, $providerConfiguration,
+    function __construct($clientId, $clientPassword, $defaultPostLogoutRedirectUri, $defaultRedirectUri, $providerConfiguration,
                          IdTokenValidator $tokenValidator, UserInfoValidator $userInfoValidator,
                          HttpClient $httpClient = null, StateSerializer $stateSerializer = null)
     {
         $this->clientId = $clientId;
         $this->clientPassword = $clientPassword;
+        $this->defaultPostLogoutRedirectUri = $defaultPostLogoutRedirectUri;
         $this->defaultRedirectUri = $defaultRedirectUri;
         $this->providerConfiguration = $providerConfiguration;
         $this->tokenValidator = $tokenValidator;
@@ -82,5 +86,16 @@ class Oasis
     {
         return new UserInfoRequestBuilder($this->httpClient, $this->userInfoValidator,
             $this->providerConfiguration['userinfo_endpoint'], $this->clientId, $this->providerConfiguration['issuer']);
+    }
+
+    public function initLogoutRequest()
+    {
+        return new LogoutRequestBuilder($this->providerConfiguration['end_session_endpoint'], $this->defaultPostLogoutRedirectUri);
+    }
+
+    public function initRevocationRequest()
+    {
+        return new RevocationRequestBuilder($this->clientId, $this->clientPassword, $this->httpClient,
+            $this->providerConfiguration['revocation_endpoint']);
     }
 }

@@ -37,6 +37,7 @@ class OasisBuilder
 
     private $clientId;
     private $clientPassword;
+    private $defaultPostLogoutRedirectUri;
     private $defaultRedirectUri;
     private $providerConfiguration;
     private $cache;
@@ -50,6 +51,12 @@ class OasisBuilder
     {
         $this->clientId = $clientId;
         $this->clientPassword = $clientPassword;
+        return $this;
+    }
+
+    public function setDefaultPostLogoutRedirectUri($defaultPostLogoutRedirectUri)
+    {
+        $this->defaultPostLogoutRedirectUri = $defaultPostLogoutRedirectUri;
         return $this;
     }
 
@@ -84,7 +91,16 @@ class OasisBuilder
         }
         $keysProvider = new KeysProvider($this->cache, $this->httpClient, $this->clientId, $this->clientPassword, $this->providerConfiguration['jwks_uri']);
         $jwtVerifier = new JwtVerifier($keysProvider);
-        return new Oasis($this->clientId, $this->clientPassword, $this->defaultRedirectUri, $this->providerConfiguration,
-            new IdTokenValidator($jwtVerifier), new UserInfoValidator($jwtVerifier), $this->httpClient, new StateSerializer());
+        return new Oasis(
+            $this->clientId,
+            $this->clientPassword,
+            $this->defaultPostLogoutRedirectUri,
+            $this->defaultRedirectUri,
+            $this->providerConfiguration,
+            new IdTokenValidator($jwtVerifier),
+            new UserInfoValidator($jwtVerifier),
+            $this->httpClient,
+            new StateSerializer()
+        );
     }
 }
