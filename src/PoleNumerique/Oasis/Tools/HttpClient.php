@@ -27,6 +27,9 @@ class HttpClient
 {
     const DEFAULT_TIMEOUT = 60;
 
+    const AUTH_BASIC = 'basic';
+    const AUTH_BEARER = 'bearer';
+
     /**
      * @throws HttpException
      */
@@ -61,12 +64,21 @@ class HttpClient
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FRESH_CONNECT => true,
             CURLOPT_FORBID_REUSE => true,
-            CURLOPT_TIMEOUT => $timeout
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_HTTPHEADER => array()
             // XXX: Put our own useragent?
         );
         if (isset($options['auth'])) {
-            $curlOptions[CURLOPT_HTTPAUTH] = CURLAUTH_BASIC;
-            $curlOptions[CURLOPT_USERPWD] = $options['auth']['username'] . ':' . $options['auth']['password'];
+            if ($options['auth']['method'] === self::AUTH_BASIC) {
+                $curlOptions[CURLOPT_HTTPAUTH] = CURLAUTH_BASIC;
+                $curlOptions[CURLOPT_USERPWD] = $options['auth']['username'] . ':' . $options['auth']['password'];
+            } else if ($options['auth']['method'] === self::AUTH_BEARER) {
+                $curlOptions[CURLOPT_HTTPHEADER][] = 'Authorization: Bearer ' . $options['auth']['token'];
+            }
+        }
+        if (isset($options['headers'])) {
+            foreach ($options['headers'] as $key => $value)
+                $curlOptions[CURLOPT_HTTPHEADER][] = $key . ': ' . $value;
         }
         return $curlOptions;
     }
@@ -78,12 +90,37 @@ class HttpClient
     {
         $curlSession = curl_init();
         curl_setopt_array($curlSession, $curlOptions);
-        if (!($result = curl_exec($curlSession))) {
+
+        // Callback which will parse each header line of the response and put it in $headers array
+        $firstLine = true;
+        $headers = array();
+        curl_setopt($curlSession, CURLOPT_HEADERFUNCTION, function ($curl, $headerLine) use (&$firstLine, &$headers) {
+            // Do not process the first line (which correspond to "HTTP/1.1 [...]")
+            if ($firstLine) {
+                $firstLine = false;
+                return strlen($headerLine);
+            }
+            if (!strlen(trim($headerLine))) {
+                return strlen($headerLine);
+            }
+            $parts = explode(':', $headerLine, 2);
+            $key = strtolower(trim($parts[0]));
+            $value = isset($parts[1]) ? trim($parts[1]) : '';
+            if (!isset($headers[$key])) {
+                $headers[$key] = array($value);
+            } else {
+                $headers[$key][] = $value;
+            }
+            // CURLOPT_HEADERFUNCTION callback needs to get the length of the line
+            return strlen($headerLine);
+        });
+
+        if (($body = curl_exec($curlSession)) === false) {
             throw new HttpException(curl_error($curlSession));
         }
         $responseInfo = curl_getinfo($curlSession);
         curl_close($curlSession);
 
-        return HttpResponse::fromCurlResponse($result, $responseInfo);
+        return HttpResponse::fromCurlResponse($body, $headers, $responseInfo);
     }
 }

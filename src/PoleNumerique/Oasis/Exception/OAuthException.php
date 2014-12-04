@@ -19,51 +19,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace PoleNumerique\Oasis\Token;
+namespace PoleNumerique\Oasis\Exception;
 
-use PoleNumerique\Oasis\Tools\Jwt;
-
-class IdToken extends Jwt
+class OAuthException extends OasisException
 {
-    private $encoded;
+    private $error;
+    private $statusCode;
 
-    public function __construct($claimset, $encoded)
+    function __construct($statusCode, $error)
     {
-        parent::__construct($claimset);
+        parent::__construct('[' . $statusCode . '] ' . $error);
 
-        $this->encoded = $encoded;
+        $this->statusCode = $statusCode;
+        $this->error = $error;
     }
 
-    public function isAppAdmin()
+    public function getStatusCode()
     {
-        return boolval($this->getClaim(IdTokenClaims::APP_ADMIN));
+        return $this->statusCode;
     }
 
-    public function isAppUser()
+    public function getError()
     {
-        return boolval($this->getClaim(IdTokenClaims::APP_USER));
-    }
-
-    public function getAuthorizationTime()
-    {
-        return $this->getClaim(IdTokenClaims::AUTHORIZATION_TIME);
-    }
-
-    public function getAuthorizedParty()
-    {
-        return $this->getClaim(IdTokenClaims::AUTHORIZED_PARTY);
-    }
-
-    /**
-     * @return string Encoded ID Token
-     */
-    public function getEncoded()
-    {
-        return $this->encoded;
-    }
-
-    public function getNonce()
-    {
-        return $this->getClaim(IdTokenClaims::NONCE);
+        return $this->error;
     }
 }

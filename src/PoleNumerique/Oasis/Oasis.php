@@ -24,8 +24,10 @@ namespace PoleNumerique\Oasis;
 use PoleNumerique\Oasis\Authz\AuthorizationRequestBuilder;
 use PoleNumerique\Oasis\Authz\StateSerializer;
 use PoleNumerique\Oasis\Token\ExchangeCodeForTokenRequestBuilder;
-use PoleNumerique\Oasis\Token\TokenValidator;
+use PoleNumerique\Oasis\Token\IdTokenValidator;
 use PoleNumerique\Oasis\Tools\HttpClient;
+use PoleNumerique\Oasis\UserInfo\UserInfoRequestBuilder;
+use PoleNumerique\Oasis\UserInfo\UserInfoValidator;
 
 class Oasis
 {
@@ -34,18 +36,20 @@ class Oasis
     private $defaultRedirectUri;
     private $providerConfiguration;
     private $tokenValidator;
+    private $userInfoValidator;
     private $httpClient;
     private $stateSerializer;
 
     function __construct($clientId, $clientPassword, $defaultRedirectUri, $providerConfiguration,
-                         TokenValidator $tokenValidator, HttpClient $httpClient = null,
-                         StateSerializer $stateSerializer = null)
+                         IdTokenValidator $tokenValidator, UserInfoValidator $userInfoValidator,
+                         HttpClient $httpClient = null, StateSerializer $stateSerializer = null)
     {
         $this->clientId = $clientId;
         $this->clientPassword = $clientPassword;
         $this->defaultRedirectUri = $defaultRedirectUri;
         $this->providerConfiguration = $providerConfiguration;
         $this->tokenValidator = $tokenValidator;
+        $this->userInfoValidator = $userInfoValidator;
         $this->httpClient = $httpClient ? $httpClient : new HttpClient();
         $this->stateSerializer = $stateSerializer ? $stateSerializer : new StateSerializer();
     }
@@ -72,5 +76,11 @@ class Oasis
             $accessTokenRequestBuilder->setRedirectUri($this->defaultRedirectUri);
         }
         return $accessTokenRequestBuilder;
+    }
+
+    public function initUserInfoRequest()
+    {
+        return new UserInfoRequestBuilder($this->httpClient, $this->userInfoValidator,
+            $this->providerConfiguration['userinfo_endpoint'], $this->clientId, $this->providerConfiguration['issuer']);
     }
 }

@@ -19,51 +19,54 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace PoleNumerique\Oasis\Token;
+namespace PoleNumerique\Oasis\Tools;
 
-use PoleNumerique\Oasis\Tools\Jwt;
-
-class IdToken extends Jwt
+class Jwt
 {
-    private $encoded;
+    protected $claimset;
 
-    public function __construct($claimset, $encoded)
+    public function __construct($claimset)
     {
-        parent::__construct($claimset);
-
-        $this->encoded = $encoded;
+        $this->claimset = $claimset;
     }
 
-    public function isAppAdmin()
+    public function getAudience()
     {
-        return boolval($this->getClaim(IdTokenClaims::APP_ADMIN));
+        $audience = $this->getClaim(JwtClaims::AUDIENCE);
+        if ($audience === null) {
+            return array();
+        }
+        if (is_string($audience)) {
+            return array($audience);
+        }
+        return $audience;
     }
 
-    public function isAppUser()
+    public function getClaim($key)
     {
-        return boolval($this->getClaim(IdTokenClaims::APP_USER));
+        if (!isset($this->claimset[$key])) {
+            return null;
+        }
+        return $this->claimset[$key];
     }
 
-    public function getAuthorizationTime()
+    public function getExpirationTime()
     {
-        return $this->getClaim(IdTokenClaims::AUTHORIZATION_TIME);
+        return $this->getClaim(JwtClaims::EXPIRATION_TIME);
     }
 
-    public function getAuthorizedParty()
+    public function getIssuedAtTime()
     {
-        return $this->getClaim(IdTokenClaims::AUTHORIZED_PARTY);
+        return $this->getClaim(JwtClaims::ISSUED_AT);
     }
 
-    /**
-     * @return string Encoded ID Token
-     */
-    public function getEncoded()
+    public function getIssuer()
     {
-        return $this->encoded;
+        return $this->getClaim(JwtClaims::ISSUER);
     }
 
-    public function getNonce()
+    public function getSubject()
     {
-        return $this->getClaim(IdTokenClaims::NONCE);
+        return $this->getClaim(JwtClaims::SUBJECT);
     }
 }

@@ -28,7 +28,9 @@ $oasis = Oasis::builder()
     'authorization_endpoint' =>
       'https://oasis.example.org/a/auth',
     'token_endpoint' =>
-      'https://oasis.example.com/a/token'
+      'https://oasis.example.com/a/token',
+    'userinfo_endpoint' =>
+      'https://oasis.example.com/a/userinfo'
   ))
   ->setCredentials('myClientId', 'myClientPassword')
   // Optional: use only if you have a single 'redirect_uri'
@@ -135,6 +137,32 @@ https://openid.net/specs/openid-connect-core-1_0.html#AuthError
 
 For more information about Token errors:
 https://openid.net/specs/openid-connect-core-1_0.html#TokenErrorResponse
+
+### Get information about the user
+
+Thanks to the access token, you can now get some information about the user (depending on the access token's scopes).
+```php
+try {
+  $userInfo = $oasis
+    ->initUserInfoRequest()
+    ->setAccessToken($accessToken)
+    ->getUserInfo();
+} catch (OAuthException $e) {
+  // Your access token is not valid (probably because it is expired)
+  // You may try to get a new one by redirecting the user to
+  // the Authorization endpoint again
+
+  // If you want more information about the error:
+  echo $e->getError() . ' [' . $e->getStatusCode() . ']';
+}
+
+// Congratulations again! Time to look at information you get.
+echo $userInfo->getId();
+echo $userInfo->getName();
+// and a lot of other interesting data!
+```
+If you want the full list of available data: [`UserInfo.php` source file](https://github.com/pole-numerique/oasis-php-integration/blob/master/src/PoleNumerique/Oasis/UserInfo/UserInfo.php)
+
 
 ## HOW TO
 ### Create your own cache implementation

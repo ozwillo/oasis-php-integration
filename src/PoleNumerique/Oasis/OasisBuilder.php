@@ -23,11 +23,12 @@ namespace PoleNumerique\Oasis;
 
 use PoleNumerique\Oasis\Authz\StateSerializer;
 use PoleNumerique\Oasis\Exception\OasisException;
-use PoleNumerique\Oasis\Token\TokenValidator;
+use PoleNumerique\Oasis\Token\IdTokenValidator;
 use PoleNumerique\Oasis\Tools\Cache;
 use PoleNumerique\Oasis\Tools\HttpClient;
 use PoleNumerique\Oasis\Tools\JwtVerifier;
 use PoleNumerique\Oasis\Tools\KeysProvider;
+use PoleNumerique\Oasis\UserInfo\UserInfoValidator;
 
 class OasisBuilder
 {
@@ -82,7 +83,8 @@ class OasisBuilder
             throw new OasisException('Missing cache.');
         }
         $keysProvider = new KeysProvider($this->cache, $this->httpClient, $this->clientId, $this->clientPassword, $this->providerConfiguration['jwks_uri']);
+        $jwtVerifier = new JwtVerifier($keysProvider);
         return new Oasis($this->clientId, $this->clientPassword, $this->defaultRedirectUri, $this->providerConfiguration,
-            new TokenValidator(new JwtVerifier($keysProvider)), $this->httpClient, new StateSerializer());
+            new IdTokenValidator($jwtVerifier), new UserInfoValidator($jwtVerifier), $this->httpClient, new StateSerializer());
     }
 }

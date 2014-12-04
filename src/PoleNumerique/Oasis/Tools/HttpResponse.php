@@ -24,22 +24,46 @@ namespace PoleNumerique\Oasis\Tools;
 class HttpResponse
 {
     private $body;
+    private $headers;
     private $statusCode;
 
-    private function __construct($body, $httpCode)
+    private function __construct($body, $headers, $httpCode)
     {
         $this->body = $body;
+        $this->headers = $headers;
         $this->statusCode = $httpCode;
     }
 
-    public static function fromCurlResponse($body, $responseInfo)
+    public static function fromCurlResponse($body, $headers, $responseInfo)
     {
-        return new HttpResponse($body, intval($responseInfo['http_code']));
+        return new HttpResponse($body, $headers, intval($responseInfo['http_code']));
+    }
+
+    public function getRawBody()
+    {
+        return $this->body;
     }
 
     public function toJson()
     {
         return json_decode($this->body, true);
+    }
+
+    public function getHeader($headerField)
+    {
+        $loweredHeaderField = strtolower($headerField);
+        if (!isset($this->headers[$loweredHeaderField])) {
+            return null;
+        }
+        $headerValue = $this->headers[$loweredHeaderField];
+        if (is_array($headerValue)) {
+            switch (count($headerValue)) {
+                case 0: return null;
+                case 1: return $headerValue[0];
+                default: return $headerValue;
+            }
+        }
+        return $headerValue;
     }
 
     public function getStatusCode()

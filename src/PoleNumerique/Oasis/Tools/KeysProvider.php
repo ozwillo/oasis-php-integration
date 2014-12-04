@@ -77,6 +77,7 @@ class KeysProvider
         try {
             $httpResponse = $this->httpClient->get($this->jwksUri, array(
                 'auth' => array(
+                    'method' => HttpClient::AUTH_BASIC,
                     'username' => $this->clientId,
                     'password' => $this->clientSecret
                 )

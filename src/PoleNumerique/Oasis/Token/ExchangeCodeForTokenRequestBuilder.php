@@ -32,7 +32,7 @@ use PoleNumerique\Oasis\Tools\HttpClient;
 class ExchangeCodeForTokenRequestBuilder
 {
     private $httpClient;
-    private $tokenValidator;
+    private $idTokenValidator;
     private $stateSerializer;
 
     private $tokenEndpoint;
@@ -47,11 +47,11 @@ class ExchangeCodeForTokenRequestBuilder
     private $expectedNonce;
     private $timeout;
 
-    public function __construct(HttpClient $httpClient, StateSerializer $stateSerializer, TokenValidator $tokenValidator,
+    public function __construct(HttpClient $httpClient, StateSerializer $stateSerializer, IdTokenValidator $idTokenValidator,
                                 $clientId, $clientPassword, $tokenEndpoint, $expectedIssuer)
     {
         $this->httpClient = $httpClient;
-        $this->tokenValidator = $tokenValidator;
+        $this->idTokenValidator = $idTokenValidator;
         $this->stateSerializer = $stateSerializer;
         $this->clientId = $clientId;
         $this->clientPassword = $clientPassword;
@@ -159,7 +159,7 @@ class ExchangeCodeForTokenRequestBuilder
             throw new OasisException('Error while trying to get an access token from an authorization code [Status=' . $response->getStatusCode() . ']');
         }
 
-        $idToken = $this->tokenValidator->validateAndGetIdToken($responseData['id_token'], $this->clientId,
+        $idToken = $this->idTokenValidator->validateAndGetIdToken($responseData['id_token'], $this->clientId,
             $this->expectedIssuer, $this->expectedNonce);
 
         // XXX: Even if the OpenID specification specify that the scope might not be included in the Token response,

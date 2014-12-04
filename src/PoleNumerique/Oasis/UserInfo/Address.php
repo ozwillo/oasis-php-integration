@@ -19,51 +19,52 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace PoleNumerique\Oasis\Token;
+namespace PoleNumerique\Oasis\UserInfo;
 
-use PoleNumerique\Oasis\Tools\Jwt;
-
-class IdToken extends Jwt
+class Address
 {
-    private $encoded;
+    private $adressData;
 
-    public function __construct($claimset, $encoded)
+    function __construct(array $adressData)
     {
-        parent::__construct($claimset);
-
-        $this->encoded = $encoded;
+        $this->adressData = $adressData;
     }
 
-    public function isAppAdmin()
+    public function getFullAddress()
     {
-        return boolval($this->getClaim(IdTokenClaims::APP_ADMIN));
+        return $this->getAddressData('full_address');
     }
 
-    public function isAppUser()
+    public function getStreetAddress()
     {
-        return boolval($this->getClaim(IdTokenClaims::APP_USER));
+        return $this->getAddressData('street_address');
     }
 
-    public function getAuthorizationTime()
+    public function getLocality()
     {
-        return $this->getClaim(IdTokenClaims::AUTHORIZATION_TIME);
+        return $this->getAddressData('locality');
     }
 
-    public function getAuthorizedParty()
+    public function getRegion()
     {
-        return $this->getClaim(IdTokenClaims::AUTHORIZED_PARTY);
+        return $this->getAddressData('region');
     }
 
-    /**
-     * @return string Encoded ID Token
-     */
-    public function getEncoded()
+    public function getPostalCode()
     {
-        return $this->encoded;
+        return $this->getAddressData('postal_code');
     }
 
-    public function getNonce()
+    public function getCountry()
     {
-        return $this->getClaim(IdTokenClaims::NONCE);
+        return $this->getAddressData('country');
+    }
+
+    private function getAddressData($key)
+    {
+        if (!isset($this->adressData[$key])) {
+            return null;
+        }
+        return $this->adressData[$key];
     }
 }
