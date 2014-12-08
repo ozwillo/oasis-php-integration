@@ -235,6 +235,24 @@ class DoctrineCache implements Cache
 }
 ```
 
+### Verify a X-Hub-Signature from the Oasis server
+
+EventBus and instance registration callbacks from the Oasis server implement the X-Hub-Signature header which sign the payload of the request.
+You MUST verify this header each time you receive it to make sure that the request came from Oasis.
+
+Let's see an example:
+```php
+// Get the raw body of the request
+$payload = @file_get_contents('php://input');
+// Get the value of the header X-Hub-Signature
+$xHubSignature = $_SERVER[PayloadXHubSignatureVerifier::X_HUB_SIGNATURE_SERVER_HEADER];
+$secret = 'mySecret';
+
+// Will throw an OasisException if it fails
+PayloadXHubSignatureVerifier::verify($xHubSignature, $payload, $secret);
+
+```
+
 ## License
 
 This library is provided under LGPL v3.
