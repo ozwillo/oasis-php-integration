@@ -34,7 +34,7 @@ class JwtVerifier
     {
         $decodedJwt = \JOSE_JWT::decode($encodedJwt);
         $key = $this->keysProvider->getKeyById($decodedJwt->header['kid']);
-        $decodedJwt->verify($key);
+        $decodedJwt->verify($key, 'RS256');
         return $decodedJwt->claims;
     }
 }
