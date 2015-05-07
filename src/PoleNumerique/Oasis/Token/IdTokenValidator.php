@@ -22,6 +22,7 @@
 namespace PoleNumerique\Oasis\Token;
 
 use PoleNumerique\Oasis\Exception\OasisException;
+use PoleNumerique\Oasis\Tools\Jwt;
 use PoleNumerique\Oasis\Tools\JwtClaims;
 use PoleNumerique\Oasis\Tools\JwtValidator;
 use PoleNumerique\Oasis\Tools\JwtVerifier;
@@ -58,7 +59,7 @@ class IdTokenValidator extends JwtValidator
     /**
      * @throws \PoleNumerique\Oasis\Exception\OasisException
      */
-    protected function checkAudience(IdToken $idToken, $clientId)
+    protected function checkAudience(Jwt $idToken, $clientId)
     {
         parent::checkAudience($idToken, $clientId);
 
@@ -70,7 +71,7 @@ class IdTokenValidator extends JwtValidator
     /**
      * @throws \PoleNumerique\Oasis\Exception\OasisException
      */
-    protected function checkNonce(IdToken $idToken, $expectedNonce)
+    protected function checkNonce(Jwt $idToken, $expectedNonce)
     {
         if ($idToken->getNonce() !== $expectedNonce) {
             throw new OasisException(self::EXCEPTION_PREFIX . 'expected and received nonces are different.');

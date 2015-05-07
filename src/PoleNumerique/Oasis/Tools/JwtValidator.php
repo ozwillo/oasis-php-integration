@@ -72,7 +72,7 @@ abstract class JwtValidator
     /**
      * @throws \PoleNumerique\Oasis\Exception\OasisException
      */
-    protected function checkAudience(JWT $jwt, $clientId)
+    protected function checkAudience(Jwt $jwt, $clientId)
     {
         if (!in_array($clientId, $jwt->getAudience())) {
             throw new OasisException($this->exceptionPrefix . 'audience claim does not contain the client id.');
@@ -82,7 +82,7 @@ abstract class JwtValidator
     /**
      * @throws \PoleNumerique\Oasis\Exception\OasisException
      */
-    protected function checkExpirationTime(JWT $jwt)
+    protected function checkExpirationTime(Jwt $jwt)
     {
         // Do not use directly "time()" to make tests easier
         if ($jwt->getExpirationTime() < ClockProvider::getClock()->getTime() - self::ACCEPTABLE_CLOCK_SKEW) {
@@ -93,7 +93,7 @@ abstract class JwtValidator
     /**
      * @throws \PoleNumerique\Oasis\Exception\OasisException
      */
-    protected function checkIssuedAtTime(JWT $jwt)
+    protected function checkIssuedAtTime(Jwt $jwt)
     {
         // Do not use directly "time()" to make tests easier
         if ($jwt->getIssuedAtTime() > ClockProvider::getClock()->getTime() + self::ACCEPTABLE_CLOCK_SKEW) {
@@ -104,7 +104,7 @@ abstract class JwtValidator
     /**
      * @throws \PoleNumerique\Oasis\Exception\OasisException
      */
-    protected function checkClaimPresence(JWT $jwt, $claim) {
+    protected function checkClaimPresence(Jwt $jwt, $claim) {
         if (!$jwt->getClaim($claim)) {
             throw new OasisException($this->exceptionPrefix . 'claim "' . $claim . '" is required.');
         }
